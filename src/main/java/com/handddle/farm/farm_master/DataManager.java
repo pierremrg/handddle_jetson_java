@@ -34,8 +34,8 @@ public class DataManager {
 
 		Ini config = new Ini(new File(CURRENT_DIR + "config.ini"));
 		
-		DATA_DIR_PATH = CURRENT_DIR + config.get("PATHS", "received_data_dir");
-		COMMANDS_FILES_DIR = CURRENT_DIR + config.get("PATHS", "commands_dir");		
+		DATA_DIR_PATH = config.get("PATHS", "received_data_dir");
+		COMMANDS_FILES_DIR = config.get("PATHS", "commands_dir");
 	}
 	
 	/**

@@ -19,7 +19,7 @@ import com.couchbase.client.java.subdoc.MutateInBuilder;
 
 public class CouchbaseManager {
 
-	private Logger logger = Logger.getLogger("com.couchbase.client");
+	private final Logger logger = Logger.getLogger("com.couchbase.client");
 	
 	private Cluster cluster;
 	private Bucket bucket;
@@ -68,7 +68,6 @@ public class CouchbaseManager {
 				.exists("last_update")
 	    	    .execute();
 
-//			return (Boolean) result.content("last_update");
 			return (Boolean) result.content(0);
 		}
 		catch(DocumentDoesNotExistException e) {

@@ -1,4 +1,4 @@
-package com.handddle.farm.farm_master;
+package com.handddle.farm.farm_master.received_data;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -6,7 +6,7 @@ import org.springframework.core.task.TaskExecutor;
 import org.springframework.stereotype.Service;
 
 @Service
-public class GetCommandsService {
+public class ReadDataService {
 
 	@Autowired
 	private TaskExecutor taskExecutor;
@@ -15,8 +15,8 @@ public class GetCommandsService {
 	private ApplicationContext applicationContext;
 	
 	public void executeAsynchronously() {
-		GetCommandsThread getCommandsThread = applicationContext.getBean(GetCommandsThread.class);
-		taskExecutor.execute(getCommandsThread);
+		ReadDataThread readDataThread = applicationContext.getBean(ReadDataThread.class);
+		taskExecutor.execute(readDataThread);
 	}
 	
 }

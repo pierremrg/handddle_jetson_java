@@ -7,9 +7,9 @@ public class FarmLogger {
 	public enum LogLevel {
 		DEBUG(0), INFO(10), WARNING(20), ERROR(30), NONE(40);
 
-		private int levelValue;
+		private final int levelValue;
 		
-		private LogLevel(int levelValue) {
+		LogLevel(int levelValue) {
 			this.levelValue = levelValue;
 		}
 		
@@ -18,7 +18,7 @@ public class FarmLogger {
 		}
 	}
 
-	private LogLevel logLevelToDisplay;
+	private final LogLevel logLevelToDisplay;
 
 	
 	/**

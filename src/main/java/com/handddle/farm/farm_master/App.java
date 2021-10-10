@@ -18,12 +18,11 @@ public class App
     public static void main( String[] args ) throws FileNotFoundException, IOException, ParseException, InterruptedException
     {
     	DataManager.initConfiguration();
-    	
+
     	Logger rootLogger = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
     	rootLogger.setLevel(Level.INFO);
-    	
+
     	SpringApplication.run(App.class, args);
-    	
     }
 
 }
