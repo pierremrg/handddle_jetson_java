@@ -6,9 +6,4 @@ public class HumidityDataPersister extends DataPersister {
         super(key, value);
     }
 
-    @Override
-    public boolean shouldBePersisted() {
-        return false;
-    }
-
 }
