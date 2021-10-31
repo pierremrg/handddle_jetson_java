@@ -65,6 +65,7 @@ public class ReadDataThread implements Runnable {
 	}
 	
 	@Override
+	@SuppressWarnings("unchecked")
 	public void run() {
 		
 		// TODO Change condition? Stop action?
@@ -72,6 +73,8 @@ public class ReadDataThread implements Runnable {
 			
 			logger.debug("Scanning files...");
 			ArrayList<String> filepaths = DataManager.getDataFilesList();
+
+			JSONObject globalSystemDataToInsert = new JSONObject();
 	        
 	        for(String filepath: filepaths) {
 
@@ -88,7 +91,6 @@ public class ReadDataThread implements Runnable {
 		    		// For each system
 		    		for (String systemCode: (Set<String>) receivedData.keySet()) {
 		    			JSONObject systemData = (JSONObject) receivedData.get(systemCode);
-						JSONObject systemDataToInsert = new JSONObject();
 
 						for(Object dataKey: systemData.keySet()){
 							String camelKey = CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.UPPER_CAMEL, dataKey.toString());
@@ -97,20 +99,11 @@ public class ReadDataThread implements Runnable {
 
 							DataPersister dataPersister = (DataPersister) dataConstructor.newInstance(dataKey.toString(), systemData.get(dataKey));
 
-							if(dataPersister.shouldBePersisted())
-								systemDataToInsert.put(dataPersister.getKey(), dataPersister.getValue());
-						}
+							if(dataPersister.shouldBePersisted()){
+								if(!globalSystemDataToInsert.containsKey(systemCode))
+									globalSystemDataToInsert.put(systemCode, new JSONObject());
 
-						if(systemDataToInsert.size() > 0){
-							try {
-								String documentKey = systemCode + "_" + new Timestamp(System.currentTimeMillis()).getTime();
-								couchbaseManager.insert(documentKey, systemDataToInsert);
-
-								logger.info("Data received from the \"" + systemCode + "\" system inserted in the database.");
-							}
-							catch(Exception e) {
-								logger.error("Could not insert data received from the \"" + systemCode + "\" system in the database.");
-								logger.error("\t Exception: " + e.getClass().toString());
+								((JSONObject) globalSystemDataToInsert.get(systemCode)).put(dataPersister.getKey(), dataPersister.getValue());
 							}
 						}
 		    		}
@@ -132,9 +125,24 @@ public class ReadDataThread implements Runnable {
 					file.delete();
 				}
 	        }
+
+			if(globalSystemDataToInsert.size() > 0){
+				for (String systemCode: (Set<String>) globalSystemDataToInsert.keySet()) {
+					try {
+						String documentKey = systemCode + "_" + new Timestamp(System.currentTimeMillis()).getTime();
+						couchbaseManager.insert(documentKey, (JSONObject) globalSystemDataToInsert.get(systemCode));
+
+						logger.info("Data received from the \"" + systemCode + "\" system inserted in the database.");
+					}
+					catch(Exception e) {
+						logger.error("Could not insert data received from the \"" + systemCode + "\" system in the database.");
+						logger.error("\t Exception: " + e.getClass().toString());
+					}
+				}
+			}
 			
 	        try {
-				Thread.sleep(2000);
+				Thread.sleep(5000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}

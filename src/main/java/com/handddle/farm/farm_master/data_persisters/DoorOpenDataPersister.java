@@ -15,7 +15,7 @@ public class DoorOpenDataPersister extends DataPersister {
     public boolean shouldBePersisted() {
         int now = (int) Math.floor(new Timestamp(System.currentTimeMillis()).getTime() / 1000.0);
 
-        if(value != lastValue || lastInsertDate < now - 10 * 60){
+        if(value != lastValue || lastInsertDate < now - 10){
             lastValue = value;
             lastInsertDate = now;
             return true;
