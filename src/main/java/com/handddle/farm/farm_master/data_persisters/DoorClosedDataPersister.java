@@ -2,12 +2,12 @@ package com.handddle.farm.farm_master.data_persisters;
 
 import java.sql.Timestamp;
 
-public class DoorOpenDataPersister extends DataPersister {
+public class DoorClosedDataPersister extends DataPersister {
 
     private static int lastValue = -1;
     private static int lastInsertDate = (int) Math.floor(new Timestamp(System.currentTimeMillis()).getTime() / 1000.0);
 
-    public DoorOpenDataPersister(String key, Object value) {
+    public DoorClosedDataPersister(String key, Object value) {
         super(key, value);
     }
 
