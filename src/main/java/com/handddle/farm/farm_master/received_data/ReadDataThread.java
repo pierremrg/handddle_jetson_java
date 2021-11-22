@@ -1,16 +1,15 @@
 package com.handddle.farm.farm_master.received_data;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Set;
 
 import com.google.common.base.CaseFormat;
-import com.handddle.farm.farm_master.CouchbaseManager;
 import com.handddle.farm.farm_master.DataManager;
 import com.handddle.farm.farm_master.FarmLogger;
 import com.handddle.farm.farm_master.data_persisters.DataPersister;
@@ -21,10 +20,7 @@ import org.json.simple.parser.ParseException;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import com.couchbase.client.java.Bucket;
 import com.handddle.farm.farm_master.FarmLogger.LogLevel;
-
-import javax.xml.crypto.Data;
 
 @Component
 @Scope("prototype")
@@ -36,30 +32,22 @@ public class ReadDataThread implements Runnable {
 //	    System.out.println(env.get("TEST"));
     
 	private final FarmLogger logger = new FarmLogger(LogLevel.DEBUG);
-	
-	CouchbaseManager couchbaseManager = null;
-	Bucket bucket;
+
+	private final URL apiURL;
 
 	// JSON files reader
-	private JSONParser parser;
+	private final JSONParser parser;
 	
 	public ReadDataThread() throws IOException {
-		// Get database information
+		// Get connection information
 		Ini config = new Ini(new File(DataManager.CURRENT_DIR + "config.ini"));
-		String host = config.get("DATABASE", "host");
-		String user = config.get("DATABASE", "user");
-		String password = config.get("DATABASE", "password");
-		String bucketName = config.get("DATABASE", "bucket_name");
 
-		if(couchbaseManager != null)
-			return;
+		String protocol = config.get("API_SERVER", "protocol");
+		String host = config.get("API_SERVER", "host");
 
-		// Init connection
-		couchbaseManager = new CouchbaseManager(host, user, password);
-		logger.info("Connection to the database initialized.");
-
-		bucket = couchbaseManager.openBucket(bucketName);
-		logger.info("\"" + bucketName + "\" bucket open.");
+		// API URL to add data to the database
+		// TODO Secure access with licence key
+		apiURL = new URL(protocol + "://" + host + "/public/api/farm_datas");
 
 		parser = new JSONParser();
 	}
@@ -129,10 +117,27 @@ public class ReadDataThread implements Runnable {
 			if(globalSystemDataToInsert.size() > 0){
 				for (String systemCode: (Set<String>) globalSystemDataToInsert.keySet()) {
 					try {
-						String documentKey = systemCode + "_" + new Timestamp(System.currentTimeMillis()).getTime();
-						couchbaseManager.insert(documentKey, (JSONObject) globalSystemDataToInsert.get(systemCode));
+						HttpURLConnection connection = (HttpURLConnection) apiURL.openConnection();
+						connection.setDoOutput(true);
+						connection.setRequestMethod("POST");
+						connection.setRequestProperty("Accept", "application/json");
+						connection.setRequestProperty("Content-Type", "application/json");
 
-						logger.info("Data received from the \"" + systemCode + "\" system inserted in the database.");
+						JSONObject postJson = new JSONObject();
+						postJson.put("system_code", systemCode);
+						postJson.put("measure_date", new Timestamp(System.currentTimeMillis()).getTime());
+						postJson.put("data", globalSystemDataToInsert.get(systemCode));
+						String postJsonString = postJson.toString();
+
+						OutputStreamWriter wr = new OutputStreamWriter(connection.getOutputStream());
+						wr.write(postJsonString);
+						wr.flush();
+
+						if(connection.getResponseCode() == HttpURLConnection.HTTP_CREATED)
+							logger.info("Data received from the \"" + systemCode + "\" system inserted in the database.");
+
+						else
+							logger.error("Could not insert data received from the \"" + systemCode + "\" system in the database.");
 					}
 					catch(Exception e) {
 						logger.error("Could not insert data received from the \"" + systemCode + "\" system in the database.");
